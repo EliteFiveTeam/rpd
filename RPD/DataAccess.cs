@@ -212,6 +212,10 @@ namespace RPD
             LabInter = new int[10];
             Practice = new int[10];
             PractInter = new int[10];
+            katt = new int[10];
+            kattex = new int[10];
+            ik = new int[10];
+            ke = new int[10];
             Elect = new int[10];
             _SR = new int[10];
             HoursCont = new int[10];

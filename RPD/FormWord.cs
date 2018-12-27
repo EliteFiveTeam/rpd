@@ -356,9 +356,7 @@ namespace RPD
             // фильтрует, оставляя только ворд файлы
             Filename_ = openFileDialog1.FileName;
             WordApp.Documents.Open(Filename_, ReadOnly: true);
-            WordApp.Application.Selection.GoTo(1,5, 5, 4);
-            WordApp.Application.Selection.Bookmarks[@"\Page"].Select();
-            WordApp.Application.Selection.Delete();
+        
             //WordApp.Documents.Add(Filename_);
            
 
@@ -969,12 +967,13 @@ namespace RPD
             FormMain FM = new FormMain();
             string NRP = FileNaim;
 
-            var RPD = WordApp.Documents.Add(FileNaim);
+            var RPD = WordApp.Documents.Open(FileNaim);
+            RPD.Activate();
 
-            string Name_NRP = DA.Index + "_" + DA.Naim + "_" + DA.Profile + ".docx"; // Название файла РПД
+            string Name_NRP = DA.Index + "_" + DA.Naim + "_" + DA.Profile + ".doc"; // Название файла РПД
 
             /* Сохранение РПД в папку на рабочем столе "РПД" */
-            string path = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            string path = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             string subpath = @"РПД";
             DirectoryInfo dirInfo = new DirectoryInfo(path);
             if (!dirInfo.Exists)
@@ -982,9 +981,9 @@ namespace RPD
                 dirInfo.Create();
             }
             dirInfo.CreateSubdirectory(subpath);
-            path = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\РПД/";
+            path = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\РПД/";
             object fileName = path + Name_NRP;
-            RPD.SaveAs(fileName);
+            RPD.SaveAs(fileName, ReadOnlyRecommended: false);
             /*   //////////////////////////////////////////// */
 
 
@@ -1125,11 +1124,17 @@ namespace RPD
                         WordApp.ActiveDocument.Tables[i].Cell(z, 6).Range.Text = D.tems[z].FormZ;
                         if (z != D.Nt + 1) WordApp.ActiveDocument.Tables[i].Rows.Add();
                     }
+                    break;
                 }
 
             }
-            FindReplace("#Вопрос1", D.ForExam[0]);
-            FindReplace("#Вопрос2", D.ForExam[1]);
+            if (D.ForExam.Count > 0)
+            {
+                FindReplace("#Вопрос1", D.ForExam[0]);
+                FindReplace("#Вопрос2", D.ForExam[1]);
+            }
+         
+           
             ReplBookmark("#Задания", ref rtb_ForExam, ref WordApp);
             if (D.Curs_R == null)
             {
@@ -1362,17 +1367,26 @@ namespace RPD
 
             for (int i = 1; i <= WordApp.ActiveDocument.Tables.Count; i++)
             {
-                if (WordApp.ActiveDocument.Tables[i].Cell(1, 2).Range.Find.Execute(FindTemPlan))
+
+
+                if (WordApp.ActiveDocument.Tables[i].Columns.Count > 1)
                 {
-                    a = i;
-                }
-                if (WordApp.ActiveDocument.Tables[i].Cell(1, 2).Range.Find.Execute(FindTemControl))
-                {
-                    b = i;
-                }
-                if (WordApp.ActiveDocument.Tables[i].Cell(1, 2).Range.Find.Execute(FindTemRating))
-                {
-                    c = i;
+                    if (WordApp.ActiveDocument.Tables[i].Cell(1, 2).Range.Find.Execute(FindTemPlan))
+                    {
+                        a = i;
+                    }
+                    if (WordApp.ActiveDocument.Tables[i].Cell(1, 2).Range.Find.Execute(FindTemControl))
+                    {
+                        b = i;
+                    }
+                    if (WordApp.ActiveDocument.Tables[i].Cell(1, 2).Range.Find.Execute(FindTemRating))
+                    {
+                        c = i;
+                    }
+                    if (a > 0 && b > 0 && c > 0) // выход из цикла
+                    {
+                        break;
+                    }
                 }
             }
 
@@ -1440,6 +1454,8 @@ namespace RPD
                     int DivideInter = DA.InterHousInSem[CountSem[d] - 1] / TemSem;
                     int RestInter = DA.InterHousInSem[CountSem[d] - 1] % TemSem;
 
+                 
+
 
                     for (int y = 0; y <= TemSem - 1; y++) // цикл заполнение тем по семестрам
                     {
@@ -1452,7 +1468,7 @@ namespace RPD
                         WordApp.ActiveDocument.Tables[b].Cell(a2, 1).Range.Text = Convert.ToString(resresh + 1);
                         WordApp.ActiveDocument.Tables[c].Cell(a3, 1).Range.Text = Convert.ToString(resresh + 1);
                         string Text = D.tems[resresh].Name.Replace("\r", "");
-                        WordApp.ActiveDocument.Tables[a].Cell(a, 2).Range.Text = Text;
+                        WordApp.ActiveDocument.Tables[a].Cell(a1, 2).Range.Text = Text;
                         WordApp.ActiveDocument.Tables[b].Cell(a2, 2).Range.Text = Text;
                         WordApp.ActiveDocument.Tables[c].Cell(a3, 2).Range.Text = Text;
                         WordApp.ActiveDocument.Tables[b].Cell(a2, 4).Range.Text = Convert.ToDouble(20.0 / TemSem).ToString("0.00");
@@ -1466,9 +1482,11 @@ namespace RPD
                             WordApp.ActiveDocument.Tables[a].Cell(a1, 7).Range.Text = "Д,МК,ОР,ОТЗ";
                             WordApp.ActiveDocument.Tables[a].Cell(a1, 8).Range.Text = Convert.ToString(DivideInter + RestInter);
                             WordApp.ActiveDocument.Tables[a].Cell(a1, 9).Range.Text = Convert.ToString(DivideEL + RestEL);
-                            WordApp.ActiveDocument.Tables[a].Cell(a1, 10).Range.Text = "П,Р,ТЗ,Лит";
-                            WordApp.ActiveDocument.Tables[a].Cell(a1, 11).Range.Text = Convert.ToString(DivideSR + RestSR);
-                            WordApp.ActiveDocument.Tables[a].Cell(a1, 12).Range.Text = "Оп,КР,Т";
+             
+                            WordApp.ActiveDocument.Tables[a].Cell(a1, 14).Range.Text = "П,Р,ТЗ,Лит";
+                            WordApp.ActiveDocument.Tables[a].Cell(a1, 15).Range.Text = Convert.ToString(DivideSR + RestSR);
+                          
+                            WordApp.ActiveDocument.Tables[a].Cell(a1, 17).Range.Text = "Оп,КР,Т"; 
                             WordApp.ActiveDocument.Tables[b].Cell(a2, 3).Range.Text = "Оп,КР,Т";
                             WordApp.ActiveDocument.Tables[c].Cell(a3, 3).Range.Text = "Р,ТЗ,Д";
                         }
@@ -1482,9 +1500,11 @@ namespace RPD
                             WordApp.ActiveDocument.Tables[a].Cell(a1, 7).Range.Text = "Д,МК,ОР,ОТЗ";
                             WordApp.ActiveDocument.Tables[a].Cell(a1, 8).Range.Text = Convert.ToString(DivideInter);
                             WordApp.ActiveDocument.Tables[a].Cell(a1, 9).Range.Text = Convert.ToString(DivideEL);
-                            WordApp.ActiveDocument.Tables[a].Cell(a1, 10).Range.Text = "П,Р,ТЗ,Лит";
-                            WordApp.ActiveDocument.Tables[a].Cell(a1, 11).Range.Text = Convert.ToString(DivideSR);
-                            WordApp.ActiveDocument.Tables[a].Cell(a1, 12).Range.Text = "Оп,КР,Т";
+                          
+                            WordApp.ActiveDocument.Tables[a].Cell(a1, 14).Range.Text = "П,Р,ТЗ,Лит";
+                            WordApp.ActiveDocument.Tables[a].Cell(a1, 15).Range.Text = Convert.ToString(DivideSR);
+                
+                            WordApp.ActiveDocument.Tables[a].Cell(a1, 17).Range.Text = "Оп,КР,Т";
                             WordApp.ActiveDocument.Tables[b].Cell(a2, 3).Range.Text = "Оп,КР,Т";
                             WordApp.ActiveDocument.Tables[c].Cell(a3, 3).Range.Text = "Р,ТЗ,Д";
                         }
@@ -1493,9 +1513,9 @@ namespace RPD
                         WordApp.ActiveDocument.Tables[b].Rows.Add();
                         WordApp.ActiveDocument.Tables[c].Rows.Add();
                     }
-                    WordApp.ActiveDocument.Tables[a].Cell(a1 + 1, 12).Range.Text = ListControl[d];// Подводим итоги в каждом семестре
+                    WordApp.ActiveDocument.Tables[a].Cell(a1 + 1, 17).Range.Text = ListControl[d];// Подводим итоги в каждом семестре
                     if (DA.HoursCont[CountSem[d] - 1] != 0) // если семестр не последний
-                    { WordApp.ActiveDocument.Tables[a].Cell(a1 + 1, 11).Range.Text = Convert.ToString(DA.HoursCont[CountSem[d] - 1]); }
+                    { WordApp.ActiveDocument.Tables[a].Cell(a1 + 1, 16).Range.Text = Convert.ToString(DA.HoursCont[CountSem[d] - 1]); }
 
                     WordApp.ActiveDocument.Tables[a].Rows.Add();
                     if (CountSem.Count - 1 != d)
@@ -1518,7 +1538,12 @@ namespace RPD
                     WordApp.ActiveDocument.Tables[a].Cell(a1 + 2, 6).Range.Text = Convert.ToString(DA.Aud / CountSem.Count);
                     WordApp.ActiveDocument.Tables[a].Cell(a1 + 2, 8).Range.Text = Convert.ToString(DA.InterHousInSem[CountSem[d] - 1]);
                     WordApp.ActiveDocument.Tables[a].Cell(a1 + 2, 9).Range.Text = Convert.ToString(DA.Elect[CountSem[d] - 1]);
-                    WordApp.ActiveDocument.Tables[a].Cell(a1 + 2, 11).Range.Text = Convert.ToString(DA._SR[CountSem[d] - 1]);
+                    WordApp.ActiveDocument.Tables[a].Cell(a1 + 2, 10).Range.Text = Convert.ToString(DA.ik[CountSem[d] - 1]);
+                    WordApp.ActiveDocument.Tables[a].Cell(a1 + 2, 11).Range.Text = Convert.ToString(DA.katt[CountSem[d] - 1]);
+                    WordApp.ActiveDocument.Tables[a].Cell(a1 + 2, 12).Range.Text = Convert.ToString(DA.ke[CountSem[d] - 1]);
+                    WordApp.ActiveDocument.Tables[a].Cell(a1 + 2, 13).Range.Text = Convert.ToString(DA.kattex[CountSem[d] - 1]);
+                    WordApp.ActiveDocument.Tables[a].Cell(a1 + 2, 15).Range.Text = Convert.ToString(DA._SR[CountSem[d] - 1]);
+                    WordApp.ActiveDocument.Tables[a].Cell(a1 + 2, 16).Range.Text = Convert.ToString(DA.HoursCont[CountSem[d] - 1]);
                     WordApp.ActiveDocument.Tables[a].Rows.Add();
 
 
@@ -1531,7 +1556,12 @@ namespace RPD
                 WordApp.ActiveDocument.Tables[a].Cell(EndRows, 6).Range.Text = Convert.ToString(DA.Aud);
                 WordApp.ActiveDocument.Tables[a].Cell(EndRows, 8).Range.Text = Convert.ToString(DA.InterHours);
                 WordApp.ActiveDocument.Tables[a].Cell(EndRows, 9).Range.Text = Convert.ToString(DA.ElectHours);
-                WordApp.ActiveDocument.Tables[a].Cell(EndRows, 11).Range.Text = Convert.ToString(DA.SR);
+                WordApp.ActiveDocument.Tables[a].Cell(EndRows, 10).Range.Text = Convert.ToString(DA.IK);
+                WordApp.ActiveDocument.Tables[a].Cell(EndRows, 11).Range.Text = Convert.ToString(DA.KaTT);
+                WordApp.ActiveDocument.Tables[a].Cell(EndRows, 12).Range.Text = Convert.ToString(DA.KE);
+                WordApp.ActiveDocument.Tables[a].Cell(EndRows, 13).Range.Text = Convert.ToString(DA.KattEx);
+                WordApp.ActiveDocument.Tables[a].Cell(EndRows, 15).Range.Text = Convert.ToString(DA.SR);
+                WordApp.ActiveDocument.Tables[a].Cell(EndRows, 16).Range.Text = Convert.ToString(DA.Contr);
             }
             else // если 1 семестр
             {
@@ -1578,11 +1608,13 @@ namespace RPD
                             WordApp.ActiveDocument.Tables[a].Cell(Index, 5).Range.Text = Convert.ToString(DivideLB + RestLB);
                             WordApp.ActiveDocument.Tables[a].Cell(Index, 6).Range.Text = Convert.ToString(DivideAUD + RestAUD);
                             WordApp.ActiveDocument.Tables[a].Cell(Index, 7).Range.Text = "Д,МК,ОР,ОТЗ";
-                            WordApp.ActiveDocument.Tables[a].Cell(Index, 8).Range.Text = Convert.ToString(DivideInter + RestInter);
-                            WordApp.ActiveDocument.Tables[a].Cell(Index, 9).Range.Text = Convert.ToString(DivideEL + RestEL);
-                            WordApp.ActiveDocument.Tables[a].Cell(Index, 10).Range.Text = "П,Р,ТЗ,Лит";
-                            WordApp.ActiveDocument.Tables[a].Cell(Index, 11).Range.Text = Convert.ToString(DivideSR + RestSR);
-                            WordApp.ActiveDocument.Tables[a].Cell(Index, 12).Range.Text = "Оп,КР,Т";
+                           // WordApp.ActiveDocument.Tables[a].Cell(Index, 8).Range.Text = Convert.ToString(DivideInter + RestInter);
+                            //WordApp.ActiveDocument.Tables[a].Cell(Index, 9).Range.Text = Convert.ToString(DivideEL + RestEL);
+
+
+                            WordApp.ActiveDocument.Tables[a].Cell(Index, 14).Range.Text = "П,Р,ТЗ,Лит";
+                            WordApp.ActiveDocument.Tables[a].Cell(Index, 15).Range.Text = Convert.ToString(DivideSR + RestSR);
+                            WordApp.ActiveDocument.Tables[a].Cell(Index, 17).Range.Text = "Оп,КР,Т";
                             WordApp.ActiveDocument.Tables[b].Cell(a2, 3).Range.Text = "Оп,КР,Т";
                             WordApp.ActiveDocument.Tables[c].Cell(a3, 3).Range.Text = "Р,ТЗ,Д";
 
@@ -1595,11 +1627,13 @@ namespace RPD
                             WordApp.ActiveDocument.Tables[a].Cell(Index, 5).Range.Text = Convert.ToString(DivideLB);
                             WordApp.ActiveDocument.Tables[a].Cell(Index, 6).Range.Text = Convert.ToString(DivideAUD);
                             WordApp.ActiveDocument.Tables[a].Cell(Index, 7).Range.Text = "Д,МК,ОР,ОТЗ";
-                            WordApp.ActiveDocument.Tables[a].Cell(Index, 8).Range.Text = Convert.ToString(DivideInter);
-                            WordApp.ActiveDocument.Tables[a].Cell(Index, 9).Range.Text = Convert.ToString(DivideEL);
-                            WordApp.ActiveDocument.Tables[a].Cell(Index, 10).Range.Text = "П,Р,ТЗ,Лит";
-                            WordApp.ActiveDocument.Tables[a].Cell(Index, 11).Range.Text = Convert.ToString(DivideSR);
-                            WordApp.ActiveDocument.Tables[a].Cell(Index, 12).Range.Text = "Оп,КР,Т";
+                            //WordApp.ActiveDocument.Tables[a].Cell(Index, 8).Range.Text = Convert.ToString(DivideInter);
+                            //WordApp.ActiveDocument.Tables[a].Cell(Index, 9).Range.Text = Convert.ToString(DivideEL);
+
+                            WordApp.ActiveDocument.Tables[a].Cell(Index, 14).Range.Text = "П,Р,ТЗ,Лит";
+                            WordApp.ActiveDocument.Tables[a].Cell(Index, 15).Range.Text = Convert.ToString(DivideSR);
+                            WordApp.ActiveDocument.Tables[a].Cell(Index, 17).Range.Text = "Оп,КР,Т";
+
                             WordApp.ActiveDocument.Tables[b].Cell(a2, 3).Range.Text = "Оп,КР,Т";
                             WordApp.ActiveDocument.Tables[c].Cell(a3, 3).Range.Text = "Р,ТЗ,Д";
                         }
@@ -1611,9 +1645,9 @@ namespace RPD
                     int EndRows = WordApp.ActiveDocument.Tables[a].Rows.Count;
                     int EndRowsB = WordApp.ActiveDocument.Tables[b].Rows.Count;
                     int EndRowsC = WordApp.ActiveDocument.Tables[c].Rows.Count;
-                    WordApp.ActiveDocument.Tables[a].Cell(EndRows, 12).Range.Text = ListControl[d];
+                    WordApp.ActiveDocument.Tables[a].Cell(EndRows, 17).Range.Text = ListControl[d];
                     if (DA.HoursCont[CountSem[d] - 1] != 0)
-                    { WordApp.ActiveDocument.Tables[a].Cell(Index + 1, 11).Range.Text = Convert.ToString(DA.HoursCont[CountSem[d] - 1]); }
+                    { WordApp.ActiveDocument.Tables[a].Cell(Index + 1, 16).Range.Text = Convert.ToString(DA.HoursCont[CountSem[d] - 1]); }
                     WordApp.ActiveDocument.Tables[a].Rows.Add();
                     EndRows = WordApp.ActiveDocument.Tables[a].Rows.Count; // Добавляем в конце таблице итоги по всей дисциплине
                     EndRowsB = WordApp.ActiveDocument.Tables[b].Rows.Count;
@@ -1629,9 +1663,15 @@ namespace RPD
                     WordApp.ActiveDocument.Tables[a].Cell(EndRows, 4).Range.Text = Convert.ToString(PR);
                     WordApp.ActiveDocument.Tables[a].Cell(EndRows, 5).Range.Text = Convert.ToString(Lab);
                     WordApp.ActiveDocument.Tables[a].Cell(EndRows, 6).Range.Text = Convert.ToString(DA.Aud);
-                    WordApp.ActiveDocument.Tables[a].Cell(EndRows, 8).Range.Text = Convert.ToString(DA.InterHours);
-                    WordApp.ActiveDocument.Tables[a].Cell(EndRows, 9).Range.Text = Convert.ToString(DA.ElectHours);
-                    WordApp.ActiveDocument.Tables[a].Cell(EndRows, 11).Range.Text = Convert.ToString(DA.SR);
+                    WordApp.ActiveDocument.Tables[a].Cell(EndRows, 8).Range.Text = Convert.ToString(DivideInter + RestInter);
+                    WordApp.ActiveDocument.Tables[a].Cell(EndRows, 9).Range.Text = Convert.ToString(DivideEL + RestEL);
+                
+                    WordApp.ActiveDocument.Tables[a].Cell(EndRows, 10).Range.Text = Convert.ToString(DA.IK);
+                    WordApp.ActiveDocument.Tables[a].Cell(EndRows, 11).Range.Text = Convert.ToString(DA.KaTT);
+                    WordApp.ActiveDocument.Tables[a].Cell(EndRows, 12).Range.Text = Convert.ToString(DA.KE);
+                    WordApp.ActiveDocument.Tables[a].Cell(EndRows, 13).Range.Text = Convert.ToString(DA.KattEx);
+                    WordApp.ActiveDocument.Tables[a].Cell(EndRows, 15).Range.Text = Convert.ToString(DA.SR);
+                    WordApp.ActiveDocument.Tables[a].Cell(EndRows, 16).Range.Text = Convert.ToString(DA.Contr);
 
                 }
 
@@ -1797,7 +1837,7 @@ namespace RPD
 
 
             BD.Connect();
-            BD.command.CommandText = "SELECT Дисциплины_профиля.Дисциплины, Дисциплины_профиля.Индекс,Дисциплины_профиля.Код_направления_подготовки, Дисциплины_профиля.Факт_по_зет, Дисциплины_профиля.По_плану, Дисциплины_профиля.Контакт_часы, Дисциплины_профиля.Аудиторные, Дисциплины_профиля.Самостоятельная_работа, Дисциплины_профиля.Контроль, Дисциплины_профиля.Элект_часы, Дисциплины_профиля.Интер_часы, Дисциплины_профиля.Закрепленная_кафедра, Дисциплины_профиля.Код_профиля, Дисциплины_профиля.Код FROM Дисциплины_профиля WHERE (((Дисциплины_профиля.Код)=" + ID + "));";
+            BD.command.CommandText = "SELECT Дисциплины_профиля.Дисциплины, Дисциплины_профиля.Индекс,Дисциплины_профиля.Код_направления_подготовки, Дисциплины_профиля.Факт_по_зет, Дисциплины_профиля.По_плану, Дисциплины_профиля.Контакт_часы, Дисциплины_профиля.Аудиторные, Дисциплины_профиля.Самостоятельная_работа, Дисциплины_профиля.Контроль, Дисциплины_профиля.Элект_часы, Дисциплины_профиля.Интер_часы, Дисциплины_профиля.Закрепленная_кафедра, Дисциплины_профиля.Код_профиля, Дисциплины_профиля.Код, Дисциплины_профиля.КЭ, Дисциплины_профиля.ИК, Дисциплины_профиля.КаТТ, Дисциплины_профиля.Каттэкз FROM Дисциплины_профиля WHERE (((Дисциплины_профиля.Код)=" + ID + "));";
             BD.reader = BD.command.ExecuteReader();
             while (BD.reader.Read())
             {
@@ -1814,6 +1854,10 @@ namespace RPD
                 DA.InterHours = Convert.ToInt32(BD.reader["Интер_часы"]);
                 DA.Kafedra = BD.reader["Закрепленная_кафедра"].ToString();
                 DA.ID = Convert.ToInt32(BD.reader["Код_профиля"]);
+                DA.KE = Convert.ToInt32(BD.reader["КЭ"]);
+                DA.KattEx = Convert.ToInt32(BD.reader["Каттэкз"]);
+                DA.KaTT = Convert.ToInt32(BD.reader["КаТТ"]);
+                DA.IK = Convert.ToInt32(BD.reader["ИК"]);
                 ID_Napr = Convert.ToInt32(BD.reader["Код_направления_подготовки"]);
             }
             BD.reader.Close();
@@ -1844,7 +1888,7 @@ namespace RPD
             }
             BD.reader.Close();
             // Запись часов по СЕМЕСТРАМ
-            BD.command.CommandText = "SELECT Семестр.Номер_семестра, Семестр.ZET, Семестр.Итого, Семестр.Лек, Семестр.Лек_инт, Семестр.Лаб, Семестр.Лаб_инт, Семестр.ПР, Семестр.ПР_инт, Семестр.Элек, Семестр.СР, Семестр.Часы_конт, Семестр.Часы_конт_электр, Семестр.Экзамен, Семестр.Зачет, Семестр.Зачет_с_оценкой, Семестр.Курсовая FROM Семестр WHERE (((Семестр.Код_дисциплины)=" + DA.Id_disp + "));";
+            BD.command.CommandText = "SELECT Семестр.Номер_семестра, Семестр.ZET, Семестр.Итого, Семестр.Лек, Семестр.Лек_инт, Семестр.Лаб, Семестр.Лаб_инт, Семестр.ПР, Семестр.ПР_инт, Семестр.Элек, Семестр.СР, Семестр.Часы_конт, Семестр.Часы_конт_электр, Семестр.Экзамен, Семестр.Зачет, Семестр.Зачет_с_оценкой, Семестр.Курсовая, Семестр.ИК, Семестр.КаТТ, Семестр.КЭ, Семестр.Каттэкз FROM Семестр WHERE (((Семестр.Код_дисциплины)=" + DA.Id_disp + "));";
             BD.reader = BD.command.ExecuteReader();
             while (BD.reader.Read())
             {
@@ -1861,6 +1905,10 @@ namespace RPD
                 DA._SR1(DA.LS, Convert.ToInt32(BD.reader["СР"]));
                 DA._HoursCont(DA.LS, Convert.ToInt32(BD.reader["Часы_конт"]));
                 DA._HoursContElect(DA.LS, Convert.ToInt32(BD.reader["Часы_конт_электр"]));
+                DA._katt(DA.LS, Convert.ToInt32(BD.reader["КаТТ"]));
+                DA._ke(DA.LS, Convert.ToInt32(BD.reader["КЭ"]));
+                DA._ik(DA.LS, Convert.ToInt32(BD.reader["ИК"]));
+                DA._kattex(DA.LS, Convert.ToInt32(BD.reader["Каттэкз"])); 
 
                 if (Convert.ToBoolean(BD.reader["Экзамен"]) == true)
                 {

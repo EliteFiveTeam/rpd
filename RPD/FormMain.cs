@@ -322,7 +322,7 @@ namespace RPD
                 return;
             }
             
-            WordApp.Documents.Add(FW.FileNaim);
+            WordApp.Documents.Open(FW.FileNaim, ReadOnly: true);
             //if (AnalysisPattern(true))
             //{
             //    /*Если шаблон вернёт значение true, то он корректен и мы можем приступить к замене слов(для замены создан специальный метод выше)*/
